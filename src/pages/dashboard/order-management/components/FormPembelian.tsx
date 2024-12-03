@@ -1,18 +1,17 @@
-// src/components/FormPembelian.tsx  
 import React, { useState, useEffect } from 'react';  
-import { Plus, Trash } from '@phosphor-icons/react';  
+import { Plus, Trash, Info } from '@phosphor-icons/react';  
 import { Product } from '@/models/productModel';  
 import { SupplierService } from '@/services/supplierService';  
 import { formatPrice } from '@/utils/formatPrice';  
 import { ProductService } from '@/services/productService';  
 import { Supplier } from '@/models/supplierModel';  
-import { PembelianService } from '@/services/pembelianService';  
 import { toast } from 'sonner';  
+import { PembelianService } from '@/services/pembelianService';  
 
 interface DetailItem {  
   id_barang: number;  
   barang?: Product;  
-  quantity: number;  
+  qty: number;  
   harga_beli: string;  
   subtotal: number;  
 }  
@@ -41,7 +40,13 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
         ProductService.getAll(),  
       ]);  
       setSuppliers(suppliersRes.result);  
-      setProducts(productsRes);  
+      
+      // Filter produk yang memiliki harga beli valid  
+      const validProducts = productsRes.filter(  
+        product => product.harga_beli && parseFloat(product.harga_beli) > 0  
+      );  
+      setProducts(validProducts);  
+      
       toast.dismiss(loadingToast);  
     } catch (error: any) {  
       toast.error('Gagal memuat data: ' + error.message);  
@@ -52,7 +57,7 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
   const addDetail = () => {  
     setDetails([  
       ...details,  
-      { id_barang: 0, quantity: 1, harga_beli: '0', subtotal: 0 },  
+      { id_barang: 0, qty: 1, harga_beli: '0', subtotal: 0 },  
     ]);  
   };  
 
@@ -60,40 +65,56 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
     setDetails(details.filter((_, i) => i !== index));  
   };  
 
-  const updateDetail = (index: number, field: keyof DetailItem, value: any) => {  
+  const updateDetail = (  
+    index: number,  
+    field: keyof DetailItem,  
+    value: string | number  
+  ) => {  
     const newDetails = [...details];  
     const detail = newDetails[index];  
 
-    if (field === 'id_barang') {  
-      const product = products.find((p) => p.id === Number(value));  
-      if (product) {  
-        detail.barang = product;  
-        detail.harga_beli = product.harga_beli;  
-        detail.subtotal = parseInt(product.harga_beli) * detail.quantity;  
+    switch (field) {  
+      case 'id_barang': {  
+        const productId = Number(value);  
+        const product = products.find(p => p.id === productId);  
+        if (product) {  
+          // Validasi harga beli  
+          if (!product.harga_beli || parseFloat(product.harga_beli) <= 0) {  
+            toast.error('Produk ini belum memiliki harga beli yang valid. Silakan update di halaman produk.');  
+            return;  
+          }  
+
+          detail.barang = product;  
+          // Harga beli diambil langsung dari produk dan tidak bisa diubah  
+          detail.harga_beli = product.harga_beli;  
+          detail.subtotal = parseInt(product.harga_beli) * detail.qty;  
+          detail.id_barang = productId;  
+        }  
+        break;  
       }  
-    } else if (field === 'quantity') {  
-      const qty = Number(value);  
-      if (qty < 1) {  
-        toast.error('Quantity tidak boleh kurang dari 1');  
-        return;  
+      case 'qty': {  
+        const qty = Number(value);  
+        const product = products.find(p => p.id === detail.id_barang);  
+        
+        // Validasi stok  
+        if (product && qty > product.stock) {  
+          toast.error(`Stok tidak mencukupi. Sisa stok: ${product.stock}`);  
+          return;  
+        }  
+
+        detail.qty = qty;  
+        detail.subtotal = parseInt(detail.harga_beli) * qty;  
+        break;  
       }  
-      detail.quantity = qty;  
-      detail.subtotal = parseInt(detail.harga_beli) * qty;  
-    } else if (field === 'harga_beli') {  
-      const harga = value.replace(/\D/g, '');  
-      if (parseInt(harga) < 1) {  
-        toast.error('Harga beli tidak boleh 0');  
-        return;  
-      }  
-      detail.harga_beli = harga;  
-      detail.subtotal = parseInt(harga) * detail.quantity;  
+      default:  
+        (detail as any)[field] = value;  
     }  
 
-    detail[field] = value;  
     setDetails(newDetails);  
   };  
 
   const handleSubmit = async () => {  
+    // Validasi input  
     if (!selectedSupplier || details.length === 0) {  
       toast.error('Mohon pilih supplier dan tambahkan minimal 1 barang');  
       return;  
@@ -101,7 +122,9 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
 
     const invalidDetails = details.some(  
       (detail) =>  
-        !detail.id_barang || detail.quantity < 1 || parseInt(detail.harga_beli) < 1  
+        !detail.id_barang ||   
+        detail.qty < 1 ||   
+        parseFloat(detail.harga_beli) <= 0  
     );  
 
     if (invalidDetails) {  
@@ -118,7 +141,7 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
         tanggal_pembelian: new Date(),  
         details: details.map((detail) => ({  
           id_barang: detail.id_barang,  
-          quantity: Number(detail.quantity),  
+          quantity: Number(detail.qty),  
           harga_beli: detail.harga_beli,  
         })),  
       };  
@@ -220,22 +243,22 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
                       type="number"  
                       min="1"  
                       className="w-24 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"  
-                      value={detail.quantity}  
+                      value={detail.qty}  
                       onChange={(e) =>  
-                        updateDetail(index, 'quantity', e.target.value)  
+                        updateDetail(index, 'qty', e.target.value)  
                       }  
                     />  
                   </td>  
-                  <td className="px-6 py-4">  
-                    <input  
-                      type="text"  
-                      className="w-32 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"  
-                      value={formatPrice(detail.harga_beli)}  
-                      onChange={(e) => {  
-                        const value = e.target.value.replace(/\D/g, '');  
-                        updateDetail(index, 'harga_beli', value);  
-                      }}  
-                    />  
+                  <td className="px-6 py-4 relative">  
+                    <div className="w-32 p-2 bg-gray-100 border border-gray-300 rounded-md flex items-center justify-between">  
+                      {formatPrice(detail.harga_beli)}  
+                      <div   
+                        className="ml-2 text-gray-500 cursor-help"  
+                        title="Harga beli diambil dari data produk dan tidak dapat diubah"  
+                      >  
+                        <Info weight="bold" className="w-4 h-4" />  
+                      </div>  
+                    </div>  
                   </td>  
                   <td className="px-6 py-4 font-medium">  
                     {formatPrice(detail.subtotal.toString())}  
@@ -274,7 +297,7 @@ const FormPembelian: React.FC<FormPembelianProps> = ({ onClose, onSuccess }) => 
           className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200  
             disabled:bg-gray-400 disabled:cursor-not-allowed ${loading ? 'opacity-70' : ''}`}  
         >  
-          {loading ? 'Menyimpan...' : 'Simpan'}  
+          {loading ? 'Buying...' : 'Buy'}  
         </button>  
       </div>  
     </div>  

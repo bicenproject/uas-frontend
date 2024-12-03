@@ -1,16 +1,9 @@
-// services/transactionService.ts  
 import axios from "@/utils/lib/axios";  
 
 interface TransactionItem {  
   product_id: number;  
   quantity: number;  
   price: string;  
-}  
-
-interface CreatePurchaseDTO {  
-  supplier_id: number;  
-  items: TransactionItem[];  
-  total_amount: string;  
 }  
 
 interface CreateSaleDTO {  
@@ -20,15 +13,6 @@ interface CreateSaleDTO {
 }  
 
 export class TransactionService {  
-  static async createPurchase(data: CreatePurchaseDTO) {  
-    try {  
-      const response = await axios.post('/pembelian', data);  
-      return response.data;  
-    } catch (error: any) {  
-      throw new Error(error.response?.data?.message || 'Gagal membuat pembelian');  
-    }  
-  }  
-
   static async createSale(data: CreateSaleDTO) {  
     try {  
       const response = await axios.post('/penjualan', data);  
@@ -48,4 +32,14 @@ export class TransactionService {
     const prefix = type === 'purchase' ? 'PB' : 'PJ';  
     return `${prefix}${year}${month}${day}${random}`;  
   }  
+
+  static async getRecentTransactions() {  
+    try {  
+      const response = await axios.get('/penjualan/recent');  
+      return response.data.result.result || [];  
+    } catch (error) {  
+      console.error('Error fetching recent transactions:', error);  
+      return [];  
+    }  
+  }
 }

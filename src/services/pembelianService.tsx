@@ -1,31 +1,44 @@
- import { CreatePembelianPayload, PembelianResponse } from '@/models/pembelianModel';  
-import axios from '@/utils/lib/axios';
+import axios from "@/utils/lib/axios";  
+import {   
+  CreatePembelianPayload,   
+  PembelianResponse   
+} from "@/models/pembelianModel";  
+
+interface ApiResponse<T> {  
+  status: {  
+    code: number;  
+    description: string;  
+  };  
+  result: T;  
+}  
 
 export class PembelianService {  
   static async create(payload: CreatePembelianPayload): Promise<PembelianResponse> {  
     try {  
-      const response = await axios.post<PembelianResponse>('/pembelian', payload);  
-      return response.data;  
+      const response = await axios.post<ApiResponse<PembelianResponse>>('/pembelian', payload);  
+      return response.data.result;  
     } catch (error: any) {  
       throw new Error(error.response?.data?.message || 'Gagal membuat pembelian');  
     }  
   }  
 
-  static async getAll(): Promise<PembelianResponse[]> {  
+  static async getRecentPembelian() {  
     try {  
-      const response = await axios.get<PembelianResponse[]>('/pembelian');  
-      return response.data;  
-    } catch (error: any) {  
-      throw new Error(error.response?.data?.message || 'Gagal mengambil data pembelian');  
+      const response = await axios.get('/pembelian/recent');  
+      return response.data.result.result || [];  
+    } catch (error) {  
+      console.error('Error fetching recent Pembelian:', error);  
+      return [];  
     }  
-  }  
+  }
 
-  static async getById(id: number): Promise<PembelianResponse> {  
+  static async getPembelianById(id: number): Promise<PembelianResponse | null> {  
     try {  
-      const response = await axios.get<PembelianResponse>(`/pembelian/${id}`);  
-      return response.data;  
+      const response = await axios.get<ApiResponse<PembelianResponse>>(`/pembelian/${id}`);  
+      return response.data.result;  
     } catch (error: any) {  
-      throw new Error(error.response?.data?.message || 'Gagal mengambil detail pembelian');  
+      console.error(`Error fetching pembelian with id ${id}:`, error);  
+      return null;  
     }  
   }  
 }

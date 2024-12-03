@@ -20,7 +20,7 @@ export default function Document() {
         {/* Meta tags SEO */}  
         <meta name="theme-color" content="#000000" />  
         <meta  
-          name="description"  
+          name="Inventory App"  
           content="Deskripsi website Anda"  
         />  
         <meta  
@@ -33,7 +33,7 @@ export default function Document() {
         <meta property="og:url" content="https://yourdomain.com/" />  
         <meta property="og:title" content="Judul Website" />  
         <meta  
-          property="og:description"  
+          property="og:Inventory App"  
           content="Deskripsi website Anda"  
         />  
         <meta property="og:image" content="/og-image.jpg" />  
@@ -43,7 +43,7 @@ export default function Document() {
         <meta property="twitter:url" content="https://yourdomain.com/" />  
         <meta property="twitter:title" content="Judul Website" />  
         <meta  
-          property="twitter:description"  
+          property="twitter:Inventory App"  
           content="Deskripsi website Anda"  
         />  
         <meta property="twitter:image" content="/og-image.jpg" />  

@@ -30,3 +30,22 @@
       };  
     }[];  
   }
+
+  
+export interface Penjualan {  
+  id: number;  
+  code: string;  
+  customer: {  
+    customer_name: string;  
+  };  
+  tanggal: string;  
+  total: number;   
+  DetailPenjualan: Array<{  
+    id: number;  
+    barang: {  
+      nama_barang: string;  
+    };  
+    qty: number;  
+    harga_jual: string;  
+  }>;  
+}

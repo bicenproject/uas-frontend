@@ -75,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!returnUrl) {  
           if (userRole === 'kasir') {  
             returnUrl = '/kasir-dashboard';  
-          } else {  
-            returnUrl = '/dashboard/admin';  
-          }  
+          } else { 
+            returnUrl = '/dashboard/admin'; 
+          } 
         }  
         
         router.push(returnUrl);  
@@ -93,24 +93,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {  
     try {  
-      setIsLoading(true); 
+      setIsLoading(true);   
       
-      localStorage.removeItem('access_token');  
-      localStorage.removeItem('refresh_token');  
-      setIsAuthenticated(false);  
-      setUser(null);  
-      
+      // Pertama, coba logout dari server  
       try {  
         await AuthService.logout();  
       } catch (error) {  
-        console.error('Logout API error:', error);  
+        console.warn('Logout API failed, proceeding with client-side logout');  
       }  
       
+      // Clear tokens di frontend  
+      AuthService.clearTokens();  
+      
+      // Reset state  
+      setIsAuthenticated(false);  
+      setUser(null);  
+      
+      // Redirect ke halaman login  
       await router.replace('/auth/sign-in');  
     } catch (error) {  
-      console.error('Logout error:', error);  
+      console.error('Logout process error:', error);  
+      // Fallback redirect  
+      await router.replace('/auth/sign-in');  
     } finally {  
-      setIsLoading(false); 
+      setIsLoading(false);   
     }  
   };
 

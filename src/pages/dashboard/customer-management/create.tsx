@@ -73,7 +73,7 @@ export default function CreateCustomerPage() {
     try {  
       await CustomerService.create(formData);  
       toast.success('Customer berhasil ditambahkan');  
-      router.push('/customer');  
+      router.push('/dashboard/customer-management');  
     } catch (error: any) {  
       toast.error(error.message || 'Gagal menambahkan customer');  
     } finally {  

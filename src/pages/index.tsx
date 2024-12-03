@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';  
 import { CatalogService } from '@/services/catalogService';  
-import { Product } from '@/models/productModel';
-import { toast } from 'sonner';
-import { SearchBar } from '@/components/SearchBar';
-import { FilterBar } from '@/components/FilterBar';
-import { ProductCard } from '@/components/ProductCard';
-import { QuickViewModal } from '@/components/QuickviewModal';
-  
+import { CategoryType, Product } from '@/models/productModel';  
+import { Package, UserCircle } from '@phosphor-icons/react';  
+import { CategoryService } from '@/services/categoryService';  
+import { SearchBar } from '@/components/guest-catalog/SearchBar';  
+import { ProductCard } from '@/components/guest-catalog/ProductCard';  
+import { FilterBar } from '@/components/guest-catalog/FilterBar';  
+import { QuickViewModal } from '@/components/guest-catalog/QuickviewModal';  
+import Link from 'next/link';
 
 export default function CatalogPage() {  
   const [products, setProducts] = useState<Product[]>([]);  
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);  
+  const [categories, setCategories] = useState<CategoryType[]>([]);  
   const [loading, setLoading] = useState(true);  
   const [error, setError] = useState('');  
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);  
@@ -19,8 +21,17 @@ export default function CatalogPage() {
   const [sortBy, setSortBy] = useState('newest');  
 
   useEffect(() => {  
-    fetchProducts();  
+    Promise.all([fetchProducts(), fetchCategories()]);  
   }, []);  
+
+  const fetchCategories = async () => {  
+    try {  
+      const fetchedCategories = await CategoryService.getAll();  
+      setCategories(fetchedCategories);  
+    } catch (err: any) {  
+      console.error('Gagal memuat kategori:', err.message);  
+    }  
+  };  
 
   useEffect(() => {  
     filterAndSortProducts();  
@@ -32,7 +43,7 @@ export default function CatalogPage() {
       const response = await CatalogService.getAllProducts();  
       setProducts(response.result);  
     } catch (err: any) {  
-      setError(err.message || 'Failed to fetch products');  
+      setError(err.message || 'Gagal mengambil produk');  
     } finally {  
       setLoading(false);  
     }  
@@ -41,14 +52,12 @@ export default function CatalogPage() {
   const filterAndSortProducts = () => {  
     let filtered = [...products];  
 
-    // Apply category filter  
     if (selectedCategory) {  
       filtered = filtered.filter(p => p.category_id === selectedCategory);  
     }  
 
-    // Apply search filter  
     if (searchQuery) {  
-      filtered = filtered.filter(p =>   
+      filtered = filtered.filter(p =>  
         p.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()) ||  
         p.category?.name.toLowerCase().includes(searchQuery.toLowerCase())  
       );  
@@ -62,38 +71,22 @@ export default function CatalogPage() {
       case 'price-desc':  
         filtered.sort((a, b) => Number(b.harga_jual) - Number(a.harga_jual));  
         break;  
-      // pages/catalog.tsx (lanjutan)  
       case 'name-asc':  
         filtered.sort((a, b) => a.nama_barang.localeCompare(b.nama_barang));  
         break;  
       case 'name-desc':  
         filtered.sort((a, b) => b.nama_barang.localeCompare(a.nama_barang));  
         break;  
-      default: // newest  
+      default:  
         filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());  
     }  
 
     setFilteredProducts(filtered);  
   };  
 
-  const handleAddToCart = (product: Product) => {  
-    toast.success(`${product.nama_barang} ditambahkan ke keranjang`, {  
-      duration: 2000,  
-      position: 'top-right',  
-    });  
-  };  
- 
-
   const handleQuickView = (product: Product) => {  
     setSelectedProduct(product);  
   };  
-
-  const categories = [  
-    ...new Set(products.map(p => p.category).filter(c => c).map(c => ({  
-      id: c!.id,  
-      name: c!.name  
-    })))  
-  ];  
 
   if (loading) {  
     return (  
@@ -111,7 +104,7 @@ export default function CatalogPage() {
       <div className="min-h-screen flex items-center justify-center">  
         <div className="text-center">  
           <div className="text-red-500 text-xl font-semibold mb-4">{error}</div>  
-          <button   
+          <button  
             onClick={fetchProducts}  
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"  
           >  
@@ -124,9 +117,48 @@ export default function CatalogPage() {
 
   return (  
     <div className="min-h-screen bg-gray-50">  
-       <div className="bg-white shadow-sm">  
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">  
-          <h1 className="text-2xl font-bold text-gray-900">Katalog Produk</h1>  
+      {/* Banner */}  
+      <div className="bg-blue-600 text-white py-4">  
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">  
+          <h2 className="text-xl font-bold">Promo Terbaru! Dapatkan Diskon 20% untuk Semua Produk!</h2>  
+          <p className="mt-1">Jangan lewatkan kesempatan ini. Belanja sekarang juga!</p>  
+        </div>  
+      </div>  
+
+      <div className="bg-white shadow-sm border-b border-gray-100">  
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center">  
+          <div>  
+            <h1 className="text-3xl font-bold text-gray-900">Katalog Produk</h1>  
+            <p className="text-gray-500 mt-1">Temukan produk pilihan terbaik kami</p>  
+          </div>  
+          
+          <div className="flex items-center space-x-4">  
+            <Link   
+              href="/auth/sign-in"  
+              className="  
+                px-4 py-2   
+                bg-blue-500   
+                text-white   
+                rounded-md   
+                hover:bg-blue-600   
+                transition-colors   
+                flex   
+                items-center   
+                space-x-2   
+                shadow-sm  
+                group  
+              "  
+            >  
+              <UserCircle className="  
+                  group-hover:rotate-12   
+                  transition-transform   
+                  duration-300  
+                "   
+                size={20}   
+              />  
+              <span>Masuk</span>  
+            </Link>  
+          </div>  
         </div>  
       </div>  
 
@@ -139,9 +171,8 @@ export default function CatalogPage() {
             onCategoryChange={setSelectedCategory}  
             onSort={setSortBy}  
           />  
-        </div> 
+        </div>  
 
-        {/* Products Grid */}  
         {filteredProducts.length > 0 ? (  
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">  
             {filteredProducts.map((product) => (  
@@ -153,31 +184,30 @@ export default function CatalogPage() {
             ))}  
           </div>  
         ) : (  
-          <div className="text-center py-12">  
-            <div className="text-gray-500 mb-4">  
-              <svg  
-                className="mx-auto h-12 w-12"  
-                fill="none"  
-                viewBox="0 0 24 24"  
-                stroke="currentColor"  
-                aria-hidden="true"  
-              >  
-                <path  
-                  strokeLinecap="round"  
-                  strokeLinejoin="round"  
-                  strokeWidth={2}  
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"  
-                />  
-              </svg>  
-            </div>  
-            <h3 className="text-lg font-medium text-gray-900 mb-2">  
-              Tidak ada produk ditemukan  
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm">  
+            <Package className="mx-auto h-12 w-12 text-gray-400" weight="thin" />  
+            <h3 className="mt-4 text-lg font-medium text-gray-900">  
+              Tidak ada produk yang ditemukan  
             </h3>  
-            <p className="text-gray-500">  
-              Coba ubah filter atau kata kunci pencarian Anda  
+            <p className="mt-2 text-sm text-gray-500">  
+              Coba ubah kata kunci pencarian atau filter Anda  
             </p>  
           </div>  
         )}  
+
+        {/* Produk Rekomendasi */}  
+        <div className="mt-12">  
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Produk Rekomendasi</h2>  
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">  
+            {products.slice(0, 4).map((product) => (  
+              <ProductCard  
+                key={product.id}  
+                product={product}  
+                onQuickView={handleQuickView}  
+              />  
+            ))}  
+          </div>  
+        </div>  
       </div>  
 
       {selectedProduct && (  

@@ -1,6 +1,6 @@
- import { CategoryType } from '@/models/productModel';
+import { CategoryType } from '@/models/productModel';  
 import { FC } from 'react';  
- 
+
 interface FilterBarProps {  
   categories: CategoryType[];  
   selectedCategory: number | null;  

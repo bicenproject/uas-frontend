@@ -13,8 +13,8 @@ interface QuickViewModalProps {
     const stockValue = product.stock ?? 0;  
     
      const handleImageError = (e: any) => {  
-      if (e.target.src !== 'vercel.svg') {  
-        e.target.src = 'vercel.svg';  
+      if (e.target.src !== 'https://images.ctfassets.net/ihx0a8chifpc/37SPg1N7dGiotuYoIYCWXk/611e638af077126bd6964ff53d12675b/dynamic-dummy-image-generator-1280x720.png?w=1920&q=60&fm=webp') {  
+        e.target.src = 'https://images.ctfassets.net/ihx0a8chifpc/37SPg1N7dGiotuYoIYCWXk/611e638af077126bd6964ff53d12675b/dynamic-dummy-image-generator-1280x720.png?w=1920&q=60&fm=webp';  
       }  
     };  
   
@@ -30,7 +30,7 @@ interface QuickViewModalProps {
                   <div className="grid grid-cols-2 gap-4">  
                     <div className="relative h-64 bg-gray-100 rounded-lg">  
                       <Image  
-                        src={product.image || 'vercel.svg'}  
+                        src={product.image || 'https://images.ctfassets.net/ihx0a8chifpc/37SPg1N7dGiotuYoIYCWXk/611e638af077126bd6964ff53d12675b/dynamic-dummy-image-generator-1280x720.png?w=1920&q=60&fm=webp'}  
                         alt={product.nama_barang}  
                         fill  
                         className="rounded-lg object-contain"  

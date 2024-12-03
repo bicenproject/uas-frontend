@@ -38,15 +38,21 @@ export class AuthService {
 
   static async logout(): Promise<void> {  
     try {  
-      await axios.get(`/auth/sign-out`, {  
-        timeout: 5000,  
-      });  
-    } catch (error) {  
-      console.error('Logout API error:', error);  
-       throw new Error('Gagal melakukan logout dari server');  
-    }  
-  }  
+      localStorage.removeItem('access_token');  
+      localStorage.removeItem('refresh_token');  
 
+      await axios.get(`/auth/sign-out`, {});  
+    } catch (error: any) {  
+      if (error.response?.status !== 401) {  
+        console.error('Logout error:', error);  
+      }  
+    }
+  }
+
+  static async clearTokens() {  
+    localStorage.removeItem('access_token');  
+    localStorage.removeItem('refresh_token');  
+  }  
   
   static async getProfile(): Promise<User> {  
     const { data } = await axios.get('/auth/profile');  
